@@ -1,0 +1,9 @@
+{
+  "namespace": "ScoreBar",
+  "source": "score-bar@1.0.0",
+  "shape": "package",
+  "provider": null,
+  "componentCount": 2,
+  "skippedStoryIds": [],
+  "runtimeFontPrefixes": []
+}

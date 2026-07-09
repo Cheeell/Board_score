@@ -1,0 +1,24 @@
+{
+  "shape": "package",
+  "styleSha": "8f124fe84405301aa5290ab875dbd33b2234787079bdfc05b1dfb5d79124fdae",
+  "renderHashes": {
+    "GameCard": "5dfe790c79cc2aae",
+    "GlareHover": "035614cd5dac2286"
+  },
+  "sourceKeys": {
+    "GameCard": "39e99120b35f12f2",
+    "GlareHover": "39e99120b35f12f2"
+  },
+  "keyRecipe": 7,
+  "scriptsSha": "d459f86d12e88254",
+  "sourceHashes": {
+    "components/general/GameCard/GameCard.jsx": "fa23873ee9ca",
+    "components/general/GameCard/GameCard.d.ts": "b3d0659efa05",
+    "components/general/GameCard/GameCard.prompt.md": "420467037993",
+    "components/general/GlareHover/GlareHover.jsx": "5012c011c28c",
+    "components/general/GlareHover/GlareHover.d.ts": "5663a1aa201e",
+    "components/general/GlareHover/GlareHover.prompt.md": "80f730d24c77"
+  },
+  "auxSha": "b1bca0867a863523",
+  "bundleSha12": "73849081f598"
+}

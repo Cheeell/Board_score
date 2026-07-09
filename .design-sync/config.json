@@ -1,0 +1,17 @@
+{
+  "pkg": "score-bar",
+  "globalName": "ScoreBar",
+  "shape": "package",
+  "buildCmd": "npx vite build --config vite.lib.config.js",
+  "srcDir": "src",
+  "cssEntry": "src/styles.css",
+  "componentSrcMap": {
+    "GlareHover": "src/GlareHover.jsx",
+    "GameCard": "src/GameCard.jsx"
+  },
+  "dtsPropsFor": {
+    "GlareHover": "width?: string; height?: string; background?: string; borderRadius?: string; borderColor?: string; children?: React.ReactNode; glareColor?: string; glareOpacity?: number; glareAngle?: number; glareSize?: number; transitionDuration?: number; playOnce?: boolean; className?: string; style?: React.CSSProperties;",
+    "GameCard": "game: { id: string; name: string; icon: string; color: string; cover?: string }; onClick: (id: string) => void; onDelete: (id: string) => void;"
+  },
+  "extraFonts": ["fonts/inter.css"]
+}
