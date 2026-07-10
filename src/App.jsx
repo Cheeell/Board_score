@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
-import { fetchGames, createGame, updateGame as updateGameApi, deleteGame as deleteGameApi, fetchAllSessions, createSession } from './store'
+import { fetchGames, createGame, updateGame as updateGameApi, deleteGame as deleteGameApi, fetchAllSessions, createSession, uploadSessionPhoto, deleteSessionPhoto } from './store'
 import GameCard from './GameCard'
 
 const SORT_OPTIONS = [
@@ -24,6 +24,7 @@ export default function App() {
   const [sortBy, setSortBy] = useState('alpha')
   const [sortOpen, setSortOpen] = useState(false)
   const sortRef = useRef(null)
+  const [selectedSession, setSelectedSession] = useState(null)
 
   // Load data from Supabase on mount
   useEffect(() => {
@@ -98,6 +99,13 @@ export default function App() {
     return players
   }
 
+  function updateSessionPhoto(sessionId, photoUrl) {
+    setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, photoUrl } : s))
+    if (selectedSession && selectedSession.id === sessionId) {
+      setSelectedSession(prev => prev ? { ...prev, photoUrl } : null)
+    }
+  }
+
   if (loading) {
     return (
       <div className="view" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
@@ -145,6 +153,7 @@ export default function App() {
               onStartSession={() => { setPlayers([]); setPlayerColors([]); setScores([]); navigate('players') }}
               onBack={() => navigate('library')}
               onEdit={() => navigate('editGame', currentGame)}
+              onSelectSession={setSelectedSession}
             />
           </motion.div>
         )}
@@ -199,8 +208,20 @@ export default function App() {
               allSessions={sessions.filter(s => s.gameId === currentGame.id)}
               onBack={() => navigate('gameDetail')}
               onPlayAgain={() => { setPlayers([]); setPlayerColors([]); setScores([]); navigate('players') }}
+              onPhotoUpdate={updateSessionPhoto}
             />
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {selectedSession && (
+          <SessionModal
+            key="session-modal"
+            session={selectedSession}
+            onClose={() => setSelectedSession(null)}
+            onPhotoUpdate={updateSessionPhoto}
+          />
         )}
       </AnimatePresence>
     </div>
@@ -410,7 +431,7 @@ function computeGameStats(sessions) {
 }
 
 // === Game Detail ===
-function GameDetailView({ game, sessions, onStartSession, onBack, onEdit }) {
+function GameDetailView({ game, sessions, onStartSession, onBack, onEdit, onSelectSession }) {
   const hasCover = game.cover && game.cover.trim()
 
   // Compute stats
@@ -508,8 +529,11 @@ function GameDetailView({ game, sessions, onStartSession, onBack, onEdit }) {
             const winner = [...s.players].sort((a, b) => b.score - a.score)[0]
             const date = new Date(s.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
             return (
-              <motion.div key={s.id} className="session-item" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-                <span className="session-item-winner">🏆 {winner.name} — {winner.score} pts</span>
+              <motion.div key={s.id} className="session-item" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} onClick={() => onSelectSession(s)}>
+                <span className="session-item-winner">
+                  {s.photoUrl && <span className="session-photo-indicator" title="Has photo">📷</span>}
+                  🏆 {winner.name} — {winner.score} pts
+                </span>
                 <span className="session-item-players">{s.players.length} players</span>
                 <span className="session-item-date">{date}</span>
               </motion.div>
@@ -636,7 +660,7 @@ function ScoringView({ game, players, playerColors, scores, setScores, onBack, o
 }
 
 // === Rankings ===
-function RankingsView({ game, players, allSessions, onBack, onPlayAgain }) {
+function RankingsView({ game, players, allSessions, onBack, onPlayAgain, onPhotoUpdate }) {
   const sorted = [...players].sort((a, b) => b.score - a.score)
   const totalScore = sorted.reduce((sum, p) => sum + p.score, 0)
 
@@ -663,9 +687,36 @@ function RankingsView({ game, players, allSessions, onBack, onPlayAgain }) {
     })).sort((a, b) => b.winRate - a.winRate)
   }
 
+  // The latest session (just created)
+  const latestSession = allSessions.length > 0 ? allSessions[allSessions.length - 1] : null
+
+  async function handlePhotoUpload(e) {
+    const file = e.target.files?.[0]
+    if (!file || !latestSession) return
+    const url = await uploadSessionPhoto(latestSession.id, file)
+    if (url && onPhotoUpdate) onPhotoUpdate(latestSession.id, url)
+  }
+
   return (
     <div className="panel panel-wide">
       <h2>Final Rankings</h2>
+
+      {latestSession && (
+        <div className="ranking-photo-section">
+          {latestSession.photoUrl ? (
+            <div className="ranking-photo-preview">
+              <img src={latestSession.photoUrl} alt="Session photo" />
+            </div>
+          ) : (
+            <label className="photo-upload-btn">
+              <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+              Upload Session Photo
+              <input type="file" accept="image/*" onChange={handlePhotoUpload} hidden />
+            </label>
+          )}
+        </div>
+      )}
+
       {sorted.map((p, i) => {
         const pct = totalScore > 0 ? ((p.score / totalScore) * 100) : (100 / sorted.length)
         const rankClass = i < 3 ? `ranking-${i + 1}` : 'ranking-other'
@@ -704,5 +755,81 @@ function RankingsView({ game, players, allSessions, onBack, onPlayAgain }) {
         <motion.button className="btn btn-primary" onClick={onPlayAgain} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>Play Again</motion.button>
       </div>
     </div>
+  )
+}
+
+// === Session Modal ===
+function SessionModal({ session, onClose, onPhotoUpdate }) {
+  const [uploading, setUploading] = useState(false)
+  const ranked = [...session.players].sort((a, b) => b.score - a.score)
+  const date = new Date(session.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+
+  async function handlePhotoUpload(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    const url = await uploadSessionPhoto(session.id, file)
+    if (url && onPhotoUpdate) onPhotoUpdate(session.id, url)
+    setUploading(false)
+  }
+
+  async function handleDeletePhoto() {
+    await deleteSessionPhoto(session.id)
+    if (onPhotoUpdate) onPhotoUpdate(session.id, null)
+  }
+
+  function handleOverlayClick(e) {
+    if (e.target === e.currentTarget) onClose()
+  }
+
+  return (
+    <motion.div className="session-modal-overlay" onClick={handleOverlayClick} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <motion.div className="session-modal" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 25 }}>
+        <button className="session-modal-close" onClick={onClose}>
+          <svg viewBox="0 0 24 24" width="20" height="20"><path d="M18 6L6 18M6 6l12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+        </button>
+
+        <div className="session-modal-date">{date}</div>
+
+        {session.photoUrl && (
+          <div className="session-modal-photo">
+            <img src={session.photoUrl} alt="Session photo" />
+          </div>
+        )}
+
+        <div className="session-modal-players">
+          {ranked.map((p, i) => (
+            <div key={p.name} className="session-modal-player">
+              <span className="session-modal-rank">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}</span>
+              <span className="session-modal-player-color" style={{ background: p.color }} />
+              <span className="session-modal-player-name">{p.name}</span>
+              <span className="session-modal-player-score">{p.score} pts</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="session-modal-photo-actions">
+          {session.photoUrl ? (
+            <>
+              <label className="btn">
+                Replace Photo
+                <input type="file" accept="image/*" onChange={handlePhotoUpload} hidden />
+              </label>
+              <button className="btn btn-danger" onClick={handleDeletePhoto}>Delete Photo</button>
+            </>
+          ) : (
+            <label className="photo-upload-btn">
+              {uploading ? 'Uploading…' : (
+                <>
+                  <svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+                  Upload Photo
+                </>
+              )}
+              <input type="file" accept="image/*" onChange={handlePhotoUpload} hidden disabled={uploading} />
+            </label>
+          )}
+        </div>
+      </motion.div>
+    </motion.div>
   )
 }

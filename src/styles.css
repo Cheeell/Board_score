@@ -674,6 +674,12 @@ header {
   margin-bottom: 4px;
   border: 1px solid var(--border);
   font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.session-item:hover {
+  background: var(--bg3);
+  border-color: var(--primary);
 }
 .session-item-winner { color: var(--text); font-weight: 600; }
 .session-item-date { color: var(--text3); font-size: 12px; }
@@ -683,6 +689,171 @@ header {
   color: var(--text3);
   padding: 28px;
   font-size: 13px;
+}
+
+.session-photo-indicator {
+  margin-right: 4px;
+  font-size: 12px;
+}
+
+/* === Session Modal === */
+.session-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+}
+
+.session-modal {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  max-width: 480px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.session-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius);
+  background: transparent;
+  border: none;
+  color: var(--text3);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+.session-modal-close:hover { background: var(--bg3); color: var(--text); }
+
+.session-modal-date {
+  font-size: 12px;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 16px;
+}
+
+.session-modal-photo {
+  margin-bottom: 16px;
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.session-modal-photo img {
+  width: 100%;
+  display: block;
+  border-radius: var(--radius);
+}
+
+.session-modal-players {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.session-modal-player {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.session-modal-rank {
+  width: 28px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.session-modal-player-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.session-modal-player-name {
+  flex: 1;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.session-modal-player-score {
+  font-size: 14px;
+  color: var(--text2);
+  font-variant-numeric: tabular-nums;
+}
+
+.session-modal-photo-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  padding-top: 4px;
+}
+
+/* === Photo Upload Button === */
+.photo-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: var(--bg3);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  font-family: inherit;
+}
+.photo-upload-btn:hover {
+  background: var(--bg);
+  border-color: var(--primary);
+  color: var(--text);
+}
+
+/* === Rankings Photo Section === */
+.ranking-photo-section {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.ranking-photo-preview {
+  width: 100%;
+  max-width: 400px;
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.ranking-photo-preview img {
+  width: 100%;
+  display: block;
+}
+
+/* === Danger Button === */
+.btn-danger {
+  background: var(--danger);
+  color: #fff;
+}
+.btn-danger:hover {
+  background: #c04444;
 }
 
 /* === Responsive === */

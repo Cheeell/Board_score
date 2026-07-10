@@ -1,5 +1,51 @@
 import { supabase } from './supabase'
 
+// ── Storage ────────────────────────────────────────────
+
+export async function uploadSessionPhoto(sessionId, file) {
+  const ext = file.name.split('.').pop()
+  const fileName = `${sessionId}/${Date.now()}.${ext}`
+  const { error: uploadError } = await supabase.storage
+    .from('session-photos')
+    .upload(fileName, file, { upsert: false })
+  if (uploadError) { console.error('uploadSessionPhoto:', uploadError); return null }
+
+  const { data: urlData } = supabase.storage
+    .from('session-photos')
+    .getPublicUrl(fileName)
+  const publicUrl = urlData.publicUrl
+
+  const { data, error: updateError } = await supabase
+    .from('sessions')
+    .update({ photo_url: publicUrl })
+    .eq('id', sessionId)
+    .select()
+    .single()
+  if (updateError) { console.error('uploadSessionPhoto update:', updateError); return null }
+  return publicUrl
+}
+
+export async function deleteSessionPhoto(sessionId) {
+  const { data: session, error: fetchError } = await supabase
+    .from('sessions')
+    .select('photo_url')
+    .eq('id', sessionId)
+    .single()
+  if (fetchError || !session?.photo_url) return
+
+  // Extract the path after the bucket name
+  const url = new URL(session.photo_url)
+  const pathParts = url.pathname.split('/session-photos/')
+  if (pathParts[1]) {
+    await supabase.storage.from('session-photos').remove([pathParts[1]])
+  }
+
+  await supabase
+    .from('sessions')
+    .update({ photo_url: null })
+    .eq('id', sessionId)
+}
+
 // ── Games ──────────────────────────────────────────────
 
 export async function fetchGames() {
@@ -87,6 +133,7 @@ export async function fetchSessions(gameId) {
     gameId: s.game_id,
     date: s.played_at,
     players: s.players,
+    photoUrl: s.photo_url || null,
   }))
 }
 
@@ -98,6 +145,7 @@ export async function fetchAllSessions() {
     gameId: s.game_id,
     date: s.played_at,
     players: s.players,
+    photoUrl: s.photo_url || null,
   }))
 }
 
@@ -116,5 +164,6 @@ export async function createSession(gameId, players) {
     gameId: data.game_id,
     date: data.played_at,
     players: data.players,
+    photoUrl: data.photo_url || null,
   }
 }
